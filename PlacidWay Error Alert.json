@@ -1,0 +1,67 @@
+{
+  "name": "PlacidWay Error Alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "d301d775-1fc8-4636-9235-6eb0ce935b40",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=Workflow failed\nWorkflow: {{ $json.workflow.name }}\nNode: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e5841549-b5c0-495e-b4de-51885a62d56e",
+      "name": "Alert Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        0
+      ],
+      "webhookId": "0bd050df-2b7f-451e-adc5-d33ff755ca73",
+      "credentials": {
+        "telegramApi": {
+          "id": "7X9gqQ2YKTHD48tM",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Alert Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "129aedd2-fbec-461b-8417-e4e06c9e95dc",
+  "meta": {
+    "instanceId": "9893900c04f44d6ec270d1010aa3d7ac313211ad5b4fddf05e2cdef0d422c17c"
+  },
+  "nodeGroups": [],
+  "id": "nCbF6QkQ6nuYOl6Y",
+  "tags": []
+}

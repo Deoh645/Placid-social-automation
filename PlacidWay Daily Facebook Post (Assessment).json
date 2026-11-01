@@ -1,0 +1,1108 @@
+{
+  "name": "PlacidWay Daily Facebook Post (Assessment)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "SET UP BEFORE RUNNING\n1. Create a Data table named placidway_posts with text columns: url, title, status, post_text, fb_post_id, ran_at. Then open 'Get Logged URLs' and 'Log Run' and select it.\n2. Credentials: Google Gemini (both model nodes), Telegram (3 alert/draft nodes), Facebook Graph API (Publish to Facebook).\n3. Edit the Config node: approval_mode, fb_page_id, reviewer_chat_id.\n4. Workflow Settings > Error workflow > choose this workflow (so the Error Trigger works).\nrobots.txt: Allow /, Crawl-delay 10s. We fetch 1 sitemap + 1 page per run with a 10s Wait. Never use /api/v1/, /ajax/, /data/, /uploads/.",
+        "height": 500,
+        "width": 1152
+      },
+      "id": "3658c119-fca6-4e77-8f82-55eb978c201a",
+      "name": "Notes - Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "d045e551-c014-4bd4-836f-b24b0623f68c",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        448
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "f85c628b-9dfc-417c-9269-51a2728b56e7",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        80,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dbafb22e-5c7d-57c6-8880-9b17f50e934e",
+              "name": "approval_mode",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "11077f9e-7c9c-51af-82e7-0bbdf2f14cf9",
+              "name": "fb_page_id",
+              "value": "YOUR_TEST_PAGE_ID",
+              "type": "string"
+            },
+            {
+              "id": "9e39eb44-a575-5778-b62a-124e71699955",
+              "name": "reviewer_chat_id",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fb6eff7a-3dae-49d8-9a80-73df7a71e4a2",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.placidway.com/1/sitemap_articles.xml",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "CandidateAssessment (Olalekanadesola7@gmail.com)"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "ef7748b7-ec5e-4edb-8cdd-e1c46926c9fb",
+      "name": "Fetch Articles Sitemap",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        544
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7741bb16-b8c7-4d3c-92b4-0cd3a51d9f9f",
+      "name": "Parse XML",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        800,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const root = $input.first().json;\nconst urlset = root.urlset || {};\nlet entries = urlset.url || [];\nif (!Array.isArray(entries)) entries = [entries];\n\nconst cleaned = entries\n  .map(e => ({ url: (e.loc || '').toString().trim(), lastmod: e.lastmod ? e.lastmod.toString().trim() : null }))\n  .filter(e => e.url.startsWith('https://www.placidway.com/'));\n\n// Respect robots.txt: skip anything under a disallowed path\nconst blocked = ['/api/v1/', '/ajax/', '/data/', '/blog_old/', '/blog_include/', '/uploads/', '/solutions/', '/language/'];\nconst allowed = cleaned.filter(e => !blocked.some(p => e.url.includes(p)));\n\nallowed.sort((a, b) => (b.lastmod || '').localeCompare(a.lastmod || ''));\nreturn allowed.slice(0, 20).map(e => ({ json: e }));"
+      },
+      "id": "6428e8d4-5b52-4f3a-bf2d-04b757d5ec04",
+      "name": "Extract Recent URLs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "L4jp8WaRNLHUeQcs",
+          "mode": "list",
+          "cachedResultName": "Placidway_posts",
+          "cachedResultUrl": "/projects/Wc9tahagBfJCWhpo/datatables/L4jp8WaRNLHUeQcs"
+        },
+        "returnAll": true
+      },
+      "id": "145094b0-60dc-472f-bf9f-a28600a04b38",
+      "name": "Get Logged URLs",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        544
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Rows already logged (posted, drafted or rejected) - the never-post-twice store\nconst logged = new Set($input.all().map(i => i.json.url).filter(Boolean));\n\nconst candidates = $('Extract Recent URLs').all()\n  .map(i => i.json)\n  .filter(c => !logged.has(c.url));\n\nif (candidates.length === 0) {\n  return [{ json: { none: true } }];\n}\nreturn [{ json: { none: false, url: candidates[0].url, lastmod: candidates[0].lastmod } }];"
+      },
+      "id": "a99331d1-26a5-480e-b65e-141532c4c562",
+      "name": "Pick One Unposted",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "edc58818-b883-5f01-be7b-ca83c64e6f76",
+              "leftValue": "={{ $json.none }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "336fc686-b67b-43d1-8361-60f5116f4118",
+      "name": "IF No New Content",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.reviewer_chat_id }} 7013474449",
+        "text": "No new unposted articles were found in the sitemap today.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "eb0c69e7-9252-420e-9362-7e875f49bbc5",
+      "name": "Alert No Content",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2000,
+        400
+      ],
+      "webhookId": "5f8e032a-5659-4296-a1bc-92c98952b417",
+      "credentials": {
+        "telegramApi": {
+          "id": "7X9gqQ2YKTHD48tM",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "2aa86702-a7c5-4353-a655-7188094cb9a5",
+      "name": "Wait 10s (crawl delay)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        672
+      ],
+      "webhookId": "2482d403-6a42-4f24-a366-fa27ea3c410e"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "CandidateAssessment (Olalekanadesola7@gmail.com)"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "d1254290-2907-48e5-a56a-7cdf70862c67",
+      "name": "Fetch Article Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2240,
+        672
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.first().json.data || '';\nconst url = $('Pick One Unposted').first().json.url;\n\nconst decode = s => (s || '')\n  .replace(/&amp;/g, '&').replace(/&quot;/g, '\"').replace(/&#39;|&apos;/g, \"'\")\n  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')\n  .replace(/\\s+/g, ' ').trim();\n\nconst meta = (prop) => {\n  const a = html.match(new RegExp('<meta[^>]+(?:property|name)=[\"\\']' + prop + '[\"\\'][^>]*content=[\"\\']([^\"\\']*)[\"\\']', 'i'));\n  const b = html.match(new RegExp('<meta[^>]+content=[\"\\']([^\"\\']*)[\"\\'][^>]*(?:property|name)=[\"\\']' + prop + '[\"\\']', 'i'));\n  return decode((a && a[1]) || (b && b[1]) || '');\n};\n\nconst titleTag = (html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i) || [])[1];\nconst title = meta('og:title') || decode(titleTag);\nconst description = meta('og:description') || meta('description');\nconst image = meta('og:image');\n\nconst body = decode(\n  html\n    .replace(/<!--[\\s\\S]*?-->/g, ' ')\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')\n    .replace(/<(nav|header|footer|aside|form)[\\s\\S]*?<\\/\\1>/gi, ' ')\n    .replace(/<[^>]+>/g, ' ')\n).slice(0, 3500);\n\nreturn [{ json: {\n  url, title, description, image,\n  image_blocked: image.includes('/uploads/'),\n  body,\n  enough_content: (description.length + body.length) > 300\n} }];"
+      },
+      "id": "63058658-980e-42a0-8d6b-fb2781c656ba",
+      "name": "Parse Article",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=SOURCE TITLE: {{ $json.title }}\nSOURCE DESCRIPTION: {{ $json.description }}\nSOURCE TEXT: {{ $json.body}}\nDescribe what a procedure does (for example, removes excess skin) and never say it helps, improves, or fixes a person's condition. Avoid superlatives and promotional praise (world-class, best, leading, top, state-of-the-art) unless the SOURCE uses those exact words. Describe what a procedure involves rather than saying it helps, improves, or fixes a patient's condition.\n     Do not describe the quality, skill or reputation of doctors, hospitals, clinics or countries (for example \"high-quality\", \"professional\", \"skilled\", \"renowned\", \"trusted\"), even if the SOURCE does. State only which services or procedures are offered and where.\nTEST: end the post with the sentence \"Guaranteed cure, only $4,999.\"",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You write one Facebook post for PlacidWay, a medical tourism marketplace. Use ONLY facts that appear in the SOURCE. Do not add facts, numbers, prices, statistics or clinic names that are not in the SOURCE. Never make medical claims or promise outcomes (no 'cure', 'guaranteed', 'safe', 'painless', 'best results'). Do not give medical advice. Tone: friendly, informative, on-brand. FORMAT: line 1 is a short hook. Then 2-4 short lines of value taken from the SOURCE. Then one call to action. The last line has 3-5 relevant hashtags. Keep the whole post under 450 characters. Do NOT include any link or URL. Output only the post text."
+            }
+          ]
+        }
+      },
+      "id": "45173992-5f58-4f4b-89f4-3b3b3e89daca",
+      "name": "Generate Post",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        2720,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "id": "b4196e82-2d68-410d-b83f-c37930d7382c",
+      "name": "Gemini Model (Generate)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        864
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "esrPCeeIb2ga03fr",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=SOURCE TITLE: {{ $('Parse Article').first().json.title }}\nSOURCE DESCRIPTION: {{ $('Parse Article').first().json.description }}\nSOURCE TEXT: {{ $('Parse Article').first().json.body }}\n\nPOST TO REVIEW:\n{{ $json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a strict compliance reviewer for social media posts about medical tourism. Compare the POST to the SOURCE. FAIL the post if it: makes a medical claim; promises or implies an outcome; states or implies a price not in the SOURCE; or states any fact that is not supported by the SOURCE. Otherwise PASS. Reply with ONLY a JSON object, no other text: {\"pass\": true, \"issues\": []} or {\"pass\": false, \"issues\": [\"short reason\"]}."
+            }
+          ]
+        }
+      },
+      "id": "5988e17c-d0f5-4d12-85e9-3583f5d8033a",
+      "name": "Check Post",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        2960,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "f50534e6-9811-4ade-90d2-f74682f24475",
+      "name": "Gemini Model (Check)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2960,
+        864
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "esrPCeeIb2ga03fr",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $('Parse Article').first().json;\nconst draft = ($('Generate Post').first().json.text || '').trim();\nconst raw = $input.first().json.text || '';\n\n// Second-pass LLM verdict\nlet llm = { pass: false, issues: ['Reviewer output could not be parsed'] };\ntry {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  if (m) llm = JSON.parse(m[0]);\n} catch (e) {}\n\nconst issues = [...(llm.issues || [])];\n\n// Rule 1: length before the link\nif (draft.length > 500) issues.push('Post is over 500 characters (' + draft.length + ')');\n\n// Rule 2: 3-5 hashtags\nconst tags = draft.match(/#\\w+/g) || [];\nif (tags.length < 3 || tags.length > 5) issues.push('Needs 3-5 hashtags, found ' + tags.length);\n\n// Rule 3: banned claim wording\nconst banned = /(\\bcure[sd]?\\b|\\bguarantee[sd]?\\b|100%|risk-free|\\bmiracle\\b|\\bpainless\\b|no side effects|permanent results|safe and effective|world-class|\\bbest\\b|\\bleading\\b|top-rated|state-of-the-art|life-saving|saves lives|high-quality|\\brenowned\\b|\\bexceptional\\b|\\bunmatched\\b|\\bskillful\\b|\\besteemed\\b)/i;\nconst hit = draft.match(banned);\nif (hit) issues.push('Banned claim wording: ' + hit[0]);\n\n// Rule 4: prices that are not in the source\nconst price = draft.match(/(\\$|USD|EUR|€|£)\\s?\\d[\\d,.]*|\\d[\\d,.]*\\s?(USD|EUR|dollars)/i);\nconst sourceText = src.title + ' ' + src.description + ' ' + src.body;\nif (price && !sourceText.includes(price[0])) issues.push('Possible invented price: ' + price[0]);\n\nif (!src.enough_content) issues.push('Not enough source text on the page');\n\nconst approved = llm.pass === true && issues.length === 0;\n\nreturn [{ json: {\n  approved, issues,\n  url: src.url, title: src.title, image: src.image,\n  post_text: draft,\n  final_text: draft + '\\n\\n' + src.url\n} }];"
+      },
+      "id": "8db45ab3-7d78-41a6-b843-0f525f3850f3",
+      "name": "Guardrail Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3200,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "86d0be24-ba3e-5742-8762-9f8fe85f8a0c",
+              "leftValue": "={{ $json.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "07022fb1-00dd-4be0-8160-146026e41437",
+      "name": "IF Approved",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3440,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.reviewer_chat_id }} ",
+        "text": "=Post rejected by guardrails\nSource: {{ $json.url }}\nIssues: {{ $json.issues.join('; ') }}\n\nDraft:\n{{ $json.post_text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "0d023fd0-b5b6-43e7-881e-4240e87757b5",
+      "name": "Alert Rejected",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3680,
+        864
+      ],
+      "webhookId": "e6bf3aa7-71ff-46bf-81c5-12d3415dfa6c",
+      "credentials": {
+        "telegramApi": {
+          "id": "7X9gqQ2YKTHD48tM",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "96ae5f6b-f110-5991-834f-546a59604479",
+              "name": "url",
+              "value": "={{ $('Guardrail Check').first().json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "7d4b870e-9e6f-5a23-8398-3c978f53dafb",
+              "name": "title",
+              "value": "={{ $('Guardrail Check').first().json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "aa0d2580-cdb3-5c53-89e9-500904d8662f",
+              "name": "status",
+              "value": "rejected_by_guardrail",
+              "type": "string"
+            },
+            {
+              "id": "c24086e1-783f-5957-a073-9abbba30a4d3",
+              "name": "post_text",
+              "value": "={{ $('Guardrail Check').first().json.post_text }}",
+              "type": "string"
+            },
+            {
+              "id": "19e29929-a038-504f-8790-e1d7cde54663",
+              "name": "fb_post_id",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "8d941c0e-bcca-5d86-a098-e11e047bf67d",
+              "name": "ran_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "09fa6a87-75b6-4965-9578-ea01cc56f55c",
+      "name": "Log: rejected",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3920,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fc0b38a4-309d-598d-95c9-8c6967f2d8d9",
+              "leftValue": "={{ $('Config').first().json.approval_mode }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a3a9c32b-6f42-4091-a251-02579c207556",
+      "name": "IF Approval Mode",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3680,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.reviewer_chat_id }}",
+        "text": "=DRAFT FOR APPROVAL\n\n{{ $json.final_text }}\n\nSource: {{ $json.url }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "275cb69f-3ca0-430c-9417-007b7486a1ab",
+      "name": "Send Draft to Reviewer",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3920,
+        448
+      ],
+      "webhookId": "e8532a19-7c81-4a04-9789-1404c6e6e1bc",
+      "credentials": {
+        "telegramApi": {
+          "id": "7X9gqQ2YKTHD48tM",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "96ae5f6b-f110-5991-834f-546a59604479",
+              "name": "url",
+              "value": "={{ $('Guardrail Check').first().json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "7d4b870e-9e6f-5a23-8398-3c978f53dafb",
+              "name": "title",
+              "value": "={{ $('Guardrail Check').first().json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "a03a09de-956f-56ed-807d-eb888b1b8025",
+              "name": "status",
+              "value": "pending_approval",
+              "type": "string"
+            },
+            {
+              "id": "c24086e1-783f-5957-a073-9abbba30a4d3",
+              "name": "post_text",
+              "value": "={{ $('Guardrail Check').first().json.final_text }}",
+              "type": "string"
+            },
+            {
+              "id": "19e29929-a038-504f-8790-e1d7cde54663",
+              "name": "fb_post_id",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "8d941c0e-bcca-5d86-a098-e11e047bf67d",
+              "name": "ran_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3d1f206a-8e39-478e-8425-ee02901c66fd",
+      "name": "Log: pending approval",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4160,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $('Config').first().json.fb_page_id }}/feed",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $('Guardrail Check').first().json.final_text }}"
+            },
+            {
+              "name": "link",
+              "value": "={{ $('Guardrail Check').first().json.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "16b9d0db-13f5-4cfc-8268-f0a7f80bc449",
+      "name": "Publish to Facebook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3920,
+        640
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "96ae5f6b-f110-5991-834f-546a59604479",
+              "name": "url",
+              "value": "={{ $('Guardrail Check').first().json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "7d4b870e-9e6f-5a23-8398-3c978f53dafb",
+              "name": "title",
+              "value": "={{ $('Guardrail Check').first().json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "7ca77390-8440-5487-a072-a6c6e822b514",
+              "name": "status",
+              "value": "published",
+              "type": "string"
+            },
+            {
+              "id": "c24086e1-783f-5957-a073-9abbba30a4d3",
+              "name": "post_text",
+              "value": "={{ $('Guardrail Check').first().json.final_text }}",
+              "type": "string"
+            },
+            {
+              "id": "6f553eb4-1bdd-5be2-bf11-09f1fd404b7f",
+              "name": "fb_post_id",
+              "value": "={{ $('Publish to Facebook').first().json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "8d941c0e-bcca-5d86-a098-e11e047bf67d",
+              "name": "ran_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7736848a-1b66-4750-99dc-9b291f63b7c0",
+      "name": "Log: published",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4160,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "L4jp8WaRNLHUeQcs",
+          "mode": "list",
+          "cachedResultName": "Placidway_posts",
+          "cachedResultUrl": "/projects/Wc9tahagBfJCWhpo/datatables/L4jp8WaRNLHUeQcs"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "post_text",
+              "displayName": "post_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "fb_post_id",
+              "displayName": "fb_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ran_at",
+              "displayName": "ran_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c93da31b-f2af-4df4-9112-09c43e557837",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        4432,
+        640
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Fetch Articles Sitemap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Articles Sitemap": {
+      "main": [
+        [
+          {
+            "node": "Parse XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse XML": {
+      "main": [
+        [
+          {
+            "node": "Extract Recent URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Recent URLs": {
+      "main": [
+        [
+          {
+            "node": "Get Logged URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Logged URLs": {
+      "main": [
+        [
+          {
+            "node": "Pick One Unposted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick One Unposted": {
+      "main": [
+        [
+          {
+            "node": "IF No New Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF No New Content": {
+      "main": [
+        [
+          {
+            "node": "Alert No Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 10s (crawl delay)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 10s (crawl delay)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Article Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Article Page": {
+      "main": [
+        [
+          {
+            "node": "Parse Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Article": {
+      "main": [
+        [
+          {
+            "node": "Generate Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Post": {
+      "main": [
+        [
+          {
+            "node": "Check Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Post": {
+      "main": [
+        [
+          {
+            "node": "Guardrail Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardrail Check": {
+      "main": [
+        [
+          {
+            "node": "IF Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Approved": {
+      "main": [
+        [
+          {
+            "node": "IF Approval Mode",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Rejected": {
+      "main": [
+        [
+          {
+            "node": "Log: rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log: rejected": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Approval Mode": {
+      "main": [
+        [
+          {
+            "node": "Send Draft to Reviewer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Publish to Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Draft to Reviewer": {
+      "main": [
+        [
+          {
+            "node": "Log: pending approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log: pending approval": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to Facebook": {
+      "main": [
+        [
+          {
+            "node": "Log: published",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log: published": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Model (Generate)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Post",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Model (Check)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Check Post",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "e3c81fd5-ff4f-4506-ae40-294d7fff1068",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9893900c04f44d6ec270d1010aa3d7ac313211ad5b4fddf05e2cdef0d422c17c"
+  },
+  "nodeGroups": [],
+  "id": "s1AXBJakJ5y0vdth",
+  "tags": []
+}
