@@ -222,11 +222,11 @@ A similar case came up earlier with the heart transplantation article, whose own
 
 **Guardrail rejection test.** To prove the checks block bad content, I temporarily appended "Guaranteed cure, only $4,999." to a real draft (the stem cell post) and ran the workflow. The post was rejected, a Telegram alert listed the issues, and the run was logged as `rejected_by_guardrail`. The alert named the banned claim wording ("Guaranteed") and the possible invented price ($4,999). The second-pass LLM reviewer also returned comments, but they concerned other phrases in the draft ("Our", "Compare options"), not the injected claim. This shows why there are two layers: the deterministic rules caught the claims reliably, while the LLM reviewer's judgement varies between runs. The test line was removed afterwards.
 
-![Telegram alert showing the guardrail rejection](screenshots/guardrail-rejection.png)
+![Telegram alert showing the guardrail rejection](guardrail-rejection.png.webp)
 
 **Failure alert test.** To prove failures are not silent, I temporarily replaced the sitemap URL with an unresolvable domain, set the schedule to run every minute, and published the workflow. The scheduled runs failed at **Fetch Articles Sitemap** after the retries, and the Telegram alert arrived naming the workflow, that node and the connection error. I then restored the real URL and the daily schedule. n8n only triggers an error workflow for automatic runs, not for runs started with the Execute button, so this test had to run on the schedule.
 
-![Telegram alert for a failed scheduled run](screenshots/failure-alert.png)
+![Telegram alert for a failed scheduled run](failure-alert.png.webp)
 
 **Other checks.** The never-post-twice rule was confirmed by running the workflow repeatedly: each run chose a different article because earlier URLs were logged. Each sample post was verified by hand against its source page.
 
