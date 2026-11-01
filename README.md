@@ -78,13 +78,15 @@ flowchart TD
 | Auto-publish / approval switch | `approval_mode` flag in the Config node |
 | Logging, retries and alerts | Every run is logged; HTTP and model calls retry; a separate error workflow sends a Telegram alert when a scheduled run fails |
 
-## Repository contents
+## Repository content
 
 | File | Purpose |
 |---|---|
 | `placidway_social_full.json` | The main workflow |
 | `placidway_error_alert.json` | The error-alert workflow (Error Trigger to Telegram message) |
-| `screenshots/` | Evidence from testing (guardrail rejection, failure alert) |
+| `workflow-canvas.png` | The main workflow on the n8n canvas |
+| `Data-table.png` | The log and never-post-twice data table |
+| `guardrail-rejection.png.webp`, `failure-alert.png.webp` | Evidence from the guardrail and failure tests |
 | `README.md` | This document |
 
 ## Setup
